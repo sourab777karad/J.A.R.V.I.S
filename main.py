@@ -43,7 +43,7 @@ def speak(text):
     
     # Setting up voice properties
     voices = engine.getProperty('voices')
-    engine.setProperty('voice', voices[1].id)  # Index 1 typically corresponds to a female voice
+    engine.setProperty('voice', voices[0].id)  # Index 1 typically corresponds to a female voice
     engine.say(text)
     engine.runAndWait()
 
