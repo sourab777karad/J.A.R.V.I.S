@@ -5,6 +5,9 @@ from bs4 import BeautifulSoup
 import speech_recognition as sr                         
 import pyttsx3                                          #text-to-speech library
 import webbrowser
+import tldextract
+import multiprocessing
+import time
 from googlesearch import search
 from youtube_search import YoutubeSearch  # External library for searching YouTube
 
@@ -14,6 +17,10 @@ import datetime
 import psutil                       #retrieving information on running processes and system utlization
 import sys 
 import os
+import re
+import openai
+
+
 
 # Function to listen to user's voice command
 def listen():
@@ -59,6 +66,9 @@ def extract_name(command):
     else:
         return None
 
+def get_time():
+    current_time = datetime.datetime.now().strftime("%H:%M")
+    speak(f"The current time is {current_time}")
 # Function to open the YouTube website
 def open_youtube():
     speak("Opening YouTube.")
@@ -106,6 +116,24 @@ def open_first_video(query):
     except Exception as e:
         speak(f"Error opening the first YouTube video: {e}")
 
+def get_page_info(url):
+    try: 
+        response = requests.get(url)
+        soup = BeautifulSoup(response.text, 'html.parser')
+        title = soup.title.string.strip()
+        speak(f"The page is titled: {title}")
+        
+        domain = tldextract.extract(url).domain
+        speak(f"opening preffered page :{domain}")
+        
+        heading = soup.find('h1')
+        if heading:
+            speak(f"The first heading is: {heading.text.strip()}")
+        
+    except Exception as e:
+        print(f"error retrieving page information: {e}")
+        speak("Sorry, I couldn't retrieve information from the page.")
+        
 # Function to search Google and open the first result
 def search_google(query):
     speak(f"Searching Google for {query}.")
@@ -113,15 +141,18 @@ def search_google(query):
     try:
         search_results = list(search(query, num=1, stop=1))
         if search_results:
-            open_url(search_results[0])
-            page_title = get_page_info(search_results[0])
+            url = search_results[0]
+            domain = tldextract.extract(url).domain
+            open_url(url)
+            page_title = get_page_info(url)
             if page_title:
                 speak(f"The page is titled: {page_title}")
+                speak(f"The main domain is: {domain}")
     except sr.UnknownValueError:
         speak("I'm sorry, I couldn't read the search result. Please check it manually.")
     except sr.RequestError as e:
         speak(f"Error connecting to Google API: {e}")
-
+      
 # Function to search YouTube and play the first video
 def search_youtube(query):
     speak(f"Searching YouTube for {query}.")
@@ -133,7 +164,7 @@ def search_youtube(query):
         webbrowser.open(video_url)
     else:
         speak("Sorry, I couldn't find any videos.")
-
+   
 # Function to get system information (CPU usage, memory usage, battery percentage)
 def get_system_info():
     cpu_usage = psutil.cpu_percent()
@@ -164,6 +195,8 @@ def main():
                     break
                 if "jarvis" in command:
                     speak("Yes sir!")
+                if "tell me the time" in command:
+                    get_time()
                 elif "say hello to" in command:
                     name = extract_name(command)
                     if name:
@@ -226,3 +259,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
